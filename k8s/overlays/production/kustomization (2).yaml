@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: accounting
+
+bases:
+  - ../../base
+
+patchesStrategicMerge:
+  - resource-limits-patch.yaml
+
+images:
+  - name: accounting-platform/ledger-processor
+    newTag: v1.0.0-prod
+  - name: accounting-platform/ai-orchestrator
+    newTag: v2.0.0-prod

@@ -1,0 +1,63 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ledger-processor-tax-season
+  namespace: accounting
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ledger-processor
+  pollingInterval: 30
+  cooldownPeriod: 300
+  minReplicaCount: 3
+  maxReplicaCount: 30
+  triggers:
+  # Scale up during ITR season (July)
+  - type: cron
+    metadata:
+      timezone: Asia/Kolkata
+      start: 0 0 1 7 *
+      end: 0 0 31 7 *
+      desiredReplicas: "25"
+  # Scale up during GST filing (10th-15th of every month)
+  - type: cron
+    metadata:
+      timezone: Asia/Kolkata
+      start: 0 0 10 * *
+      end: 0 0 15 * *
+      desiredReplicas: "20"
+  # Scale up during year-end (March)
+  - type: cron
+    metadata:
+      timezone: Asia/Kolkata
+      start: 0 0 1 3 *
+      end: 0 0 31 3 *
+      desiredReplicas: "15"
+  # Default CPU-based scaling
+  - type: cpu
+    metadata:
+      type: Utilization
+      value: "70"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ai-orchestrator-scaler
+  namespace: accounting
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-orchestrator
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  triggers:
+  - type: cpu
+    metadata:
+      type: Utilization
+      value: "60"
+  - type: memory
+    metadata:
+      type: Utilization
+      value: "75"
